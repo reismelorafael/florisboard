@@ -21,6 +21,8 @@ pluginManagement {
         gradlePluginPortal()
         google()
         mavenCentral()
+        maven(url = "/usr/local/lib/android/sdk/extras/google/m2repository")
+        maven(url = "/usr/local/lib/android/sdk/extras/android/m2repository")
     }
 }
 
@@ -42,13 +44,12 @@ dependencyResolutionManagement {
 }
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
-// Temporarily exclude Android modules due to network connectivity issues
-// include(":app")
-//include(":benchmark")
-// include(":lib:android")
-// include(":lib:color")
-// include(":lib:compose")
+include(":app")
+include(":benchmark")
+include(":lib:android")
+include(":lib:color")
+include(":lib:compose")
 include(":lib:kotlin")
-// include(":lib:native")
-// include(":lib:snygg")
+include(":lib:native")
+include(":lib:snygg")
 include(":lib:zipraf-omega")
