@@ -18,9 +18,9 @@ rootProject.name = "FlorisBoard"
 
 pluginManagement {
     repositories {
+        mavenCentral()
         gradlePluginPortal()
         google()
-        mavenCentral()
         maven(url = "/usr/local/lib/android/sdk/extras/google/m2repository")
         maven(url = "/usr/local/lib/android/sdk/extras/android/m2repository")
     }
