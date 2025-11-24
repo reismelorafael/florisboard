@@ -21,8 +21,6 @@ pluginManagement {
         mavenCentral()
         gradlePluginPortal()
         google()
-        maven(url = "/usr/local/lib/android/sdk/extras/google/m2repository")
-        maven(url = "/usr/local/lib/android/sdk/extras/android/m2repository")
     }
 }
 
