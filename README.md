@@ -69,8 +69,8 @@ fully respecting your privacy. Currently in beta state.
 
 ## Where is the compiled APK?
 
-- **Prebuilt**: Download signed APKs from the [GitHub Releases](https://github.com/florisboard/florisboard/releases) page (stable and preview tracks).
-- **Local builds**: After running `./gradlew :app:assembleRelease` or `./build_unsigned.sh`, the generated APKs are placed in `app/build/outputs/apk/release/` (use `app/build/outputs/apk/debug/` for debug builds).
+- **Prebuilt**: Download signed APKs from the [GitHub Releases](https://github.com/florisboard/florisboard/releases) page (stable and preview tracks) or install via the official store/repo options: F-Droid, IzzyOnDroid, Google Play testing channels, or the Obtainium templates.
+- **Local builds**: `./gradlew :app:assembleRelease` or `./build_unsigned.sh` write to `app/build/outputs/apk/release/`; `./gradlew :app:assembleBeta` writes to `app/build/outputs/apk/beta/`; `./gradlew :app:assembleDebug` writes to `app/build/outputs/apk/debug/`.
 
 Beginning with v0.7 FlorisBoard will enter the public beta on Google Play.
 
