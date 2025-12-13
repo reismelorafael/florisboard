@@ -724,7 +724,7 @@
     <string name="pref__clipboard__history_hide_on_next_text_field__label">Hide history on next text field</string>
     <string name="pref__clipboard__clear_primary_clip_affects_history_if_unpinned__label">Clear primary clip affects history</string>
     <string name="pref__clipboard__clear_primary_clip_affects_history_if_unpinned__summary">Clearing the primary clip also removes it from the history, if not pinned</string>
-    <string name="pref__clipboard__clear_primary_clip_deletes_last_item__label">Clearing the primary clip affects history</string>
+    <string name="pref__clipboard__clear_primary_clip_deletes_last_item__label">Clearing the primary clip deletes the latest history item</string>
     <string name="pref__clipboard__clear_primary_clip_deletes_last_item__summary">Clearing the primary clip also deletes the most recent history entry</string>
     <string name="pref__clipboard__sync_from_system_clipboard__summary">System clipboard updates also update the Floris clipboard</string>
     <string name="pref__clipboard__sync_to_system_clipboard__summary">Floris clipboard updates also update the system clipboard</string>
