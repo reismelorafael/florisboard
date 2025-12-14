@@ -1,6 +1,9 @@
 #!/bin/bash
 # FlorisBoard Build and Sign Script
 # 
+# Note: If running on Termux, you may need to change the shebang to:
+# #!/data/data/com.termux/files/usr/bin/bash
+#
 # This script builds and signs a release APK in one step
 # Usage: ./build_and_sign.sh
 #
@@ -51,7 +54,7 @@ echo "Found APK: $APK_FILE"
 
 # Step 4: Sign the APK
 echo ""
-echo "Step 3: Signing the APK..."
+echo "Step 4: Signing the APK..."
 ./sign_apk.sh "$APK_FILE"
 
 echo ""

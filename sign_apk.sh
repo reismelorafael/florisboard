@@ -1,6 +1,9 @@
 #!/bin/bash
 # FlorisBoard APK Signing Script
 # 
+# Note: If running on Termux, you may need to change the shebang to:
+# #!/data/data/com.termux/files/usr/bin/bash
+#
 # This script signs APK files using apksigner with the configuration from signing.properties
 # Usage: ./sign_apk.sh <apk_file>
 # 
