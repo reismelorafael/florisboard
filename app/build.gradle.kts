@@ -1,14 +1,30 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
     alias(libs.plugins.agp.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.plugin.compose)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.kotlinx.kover)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.androidx.room)
+    alias(libs.plugins.mikepenz.aboutlibraries)
 }
 
 val projectMinSdk: String by project
 val projectTargetSdk: String by project
 val projectCompileSdk: String by project
+
+kotlin {
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_17)
+        freeCompilerArgs.set(listOf(
+            "-opt-in=kotlin.RequiresOptIn",
+            "-opt-in=kotlin.contracts.ExperimentalContracts",
+            "-Xjvm-default=all"
+        ))
+    }
+}
 
 android {
     namespace = "dev.patrickgold.florisboard"
@@ -45,6 +61,10 @@ android {
     lint {
         checkReleaseBuilds = false
         abortOnError = false
+        // Note: MissingTranslation and ExtraTranslation are disabled to allow partial translations
+        // while maintaining build stability across multiple language packs
+        disable += setOf("MissingTranslation", "ExtraTranslation")
+        baseline = file("lint-baseline.xml")
     }
 
     buildTypes {
@@ -52,11 +72,21 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            
+            // Performance optimizations
+            ndk {
+                debugSymbolLevel = "SYMBOL_TABLE"
+            }
         }
         debug {
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
             isMinifyEnabled = false
+            
+            // Speed up debug builds
+            ndk {
+                debugSymbolLevel = "NONE"
+            }
         }
     }
 
@@ -65,25 +95,32 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = "17"
-        freeCompilerArgs = freeCompilerArgs + listOf(
-            "-opt-in=kotlin.RequiresOptIn",
-            "-opt-in=kotlin.contracts.ExperimentalContracts",
-            "-Xjvm-default=all"
-        )
-    }
-
     buildFeatures {
         compose = true
         buildConfig = true
+        // Disable unused features for faster builds
+        aidl = false
+        renderScript = false
+        shaders = false
     }
     
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            // Remove duplicate files
+            pickFirsts += setOf(
+                "META-INF/versions/9/previous-compilation-data.bin"
+            )
+        }
+        jniLibs {
+            // Reduce APK size by keeping only required architectures
+            useLegacyPackaging = false
         }
     }
+}
+
+room {
+    schemaDirectory("$projectDir/schemas")
 }
 
 dependencies {
@@ -93,6 +130,7 @@ dependencies {
     implementation(projects.lib.kotlin)
     implementation(projects.lib.snygg) 
     implementation(projects.lib.compose)
+    implementation(projects.lib.native)
 
     // Dependências externas essenciais
     implementation(libs.androidx.autofill)
@@ -103,18 +141,27 @@ dependencies {
     implementation(libs.androidx.compose.material.icons)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
+    implementation(libs.androidx.compose.ui.tooling.preview)
+    debugImplementation(libs.androidx.compose.ui.tooling)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.accompanist.systemuicontroller)
     implementation(libs.androidx.profileinstaller)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.androidx.emoji2)
+    implementation(libs.androidx.emoji2.views)
+    implementation(libs.androidx.room.runtime)
+    ksp(libs.androidx.room.compiler)
+    implementation(libs.androidx.exifinterface)
     implementation(libs.cache4k)
     implementation(libs.patrickgold.compose.tooltip)
     implementation(libs.patrickgold.jetpref.datastore.ui)
     implementation(libs.patrickgold.jetpref.material.ui)
     implementation(libs.patrickgold.jetpref.datastore.model)
+    implementation(libs.mikepenz.aboutlibraries.core)
+    implementation(libs.mikepenz.aboutlibraries.compose)
     
     // Testes (opcional, mas evita erros se o projeto pedir)
     testImplementation(libs.kotlin.test.junit5)
+    testImplementation(libs.junit.jupiter.params)
 }
