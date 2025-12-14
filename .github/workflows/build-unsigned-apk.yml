@@ -21,7 +21,11 @@
 # - buildType: release/debug (default "release")
 # - skipSigningProp: property passed to Gradle to skip signing (default "true")
 #
-name: Build Release APK (unsigned & optional signing)
+# Generates 2 artifacts:
+# - unsigned-apk: APK without signature (always generated)
+# - signed-apk: APK with signature (only if signing secrets are configured)
+#
+name: Build Release APK (unsigned & signed artifacts)
 
 on:
   workflow_dispatch:
@@ -146,7 +150,7 @@ jobs:
             exit 1
           fi
           echo "Unsigned APK: $APK_FILE"
-          echo "::set-output name=apk::$APK_FILE"
+          echo "apk=$APK_FILE" >> $GITHUB_OUTPUT
 
       - name: Upload unsigned APK artifact
         uses: actions/upload-artifact@v4
@@ -154,20 +158,33 @@ jobs:
           name: unsigned-apk
           path: ${{ steps.find_apk.outputs.apk }}
 
-      - name: Optionally sign APK (if keystore provided)
-        if: ${{ secrets.RELEASE_KEYSTORE_BASE64 != '' }}
+      - name: Check if signing secrets are available
+        id: check_secrets
+        env:
+          HAS_KEYSTORE: ${{ secrets.RELEASE_KEYSTORE_BASE64 != '' }}
+        run: |
+          if [ "$HAS_KEYSTORE" = "true" ]; then
+            echo "has_signing_secrets=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_signing_secrets=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Sign APK (if keystore provided)
+        id: sign_apk
+        if: steps.check_secrets.outputs.has_signing_secrets == 'true'
         env:
           MODULE: ${{ github.event.inputs.module || 'app' }}
           BUILD_TOOLS_VERSION: ${{ env.BUILD_TOOLS_VERSION }}
+          KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+          KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          STORE_PASS: ${{ secrets.RELEASE_STORE_PASS }}
+          KEY_PASS: ${{ secrets.RELEASE_KEY_PASS }}
         run: |
           set -euo pipefail
           # decode keystore from secret
           TMP_DIR="$(mktemp -d)"
-          echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" | base64 --decode > "$TMP_DIR/keystore.jks"
+          echo "$KEYSTORE_BASE64" | base64 --decode > "$TMP_DIR/keystore.jks"
           KS="$TMP_DIR/keystore.jks"
-          ALIAS="${{ secrets.RELEASE_KEY_ALIAS }}"
-          STORE_PASS="${{ secrets.RELEASE_STORE_PASS }}"
-          KEY_PASS="${{ secrets.RELEASE_KEY_PASS }}"
           APK_PATH="${{ steps.find_apk.outputs.apk }}"
           if [ -z "$APK_PATH" ]; then
             echo "APK path not found"; exit 1
@@ -178,15 +195,16 @@ jobs:
             echo "apksigner not found at $APKSIGNER"; exit 1
           fi
           echo "Signing APK (output: $SIGNED_APK)..."
-          "$APKSIGNER" sign --ks "$KS" --ks-key-alias "$ALIAS" --ks-pass "pass:$STORE_PASS" --key-pass "pass:$KEY_PASS" --out "$SIGNED_APK" "$APK_PATH"
+          "$APKSIGNER" sign --ks "$KS" --ks-key-alias "$KEY_ALIAS" --ks-pass "pass:$STORE_PASS" --key-pass "pass:$KEY_PASS" --out "$SIGNED_APK" "$APK_PATH"
           echo "Signed APK written to $SIGNED_APK"
-          # Upload signed artifact
-          echo "::set-output name=signed_apk::$SIGNED_APK"
+          echo "signed_apk=$SIGNED_APK" >> $GITHUB_OUTPUT
+          # Cleanup keystore file
+          rm -f "$KS"
         shell: bash
 
-      - name: Upload signed APK (if created)
-        if: ${{ secrets.RELEASE_KEYSTORE_BASE64 != '' }}
+      - name: Upload signed APK artifact
+        if: steps.check_secrets.outputs.has_signing_secrets == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: signed-apk
-          path: ${{ steps.build.outputs.signed_apk || steps.find_apk.outputs.apk }}
+          path: ${{ steps.sign_apk.outputs.signed_apk }}
