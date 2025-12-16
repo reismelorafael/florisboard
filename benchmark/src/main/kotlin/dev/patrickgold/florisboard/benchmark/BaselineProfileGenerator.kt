@@ -43,7 +43,7 @@ class BaselineProfileGenerator {
                 val pkg = targetPackage
                 try {
                     val pm = device.executeShellCommand("pm list packages $pkg")
-                    if (pm == null || pm.contains(pkg).not()) {
+                    if (pm?.contains(pkg) != true) {
                         println("BaselineProfileGenerator: target package '$pkg' not installed on device; skipping startup profile collection.")
                         return@collect
                     }
