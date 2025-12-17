@@ -1,0 +1,63 @@
+name: Build APK (unsigned)
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
+      - name: Fetch assets (retry up to 3 times)
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3; do
+            echo "Attempt $attempt/3: fetching assets"
+            if ./gradlew --no-daemon :app:fetchAssets; then
+              break
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              echo "fetchAssets failed after 3 attempts"
+              exit 1
+            fi
+            echo "fetchAssets failed, retrying in 5 seconds..."
+            sleep 5
+          done
+
+      - name: Assemble Debug (unsigned)
+        run: ./gradlew --no-daemon :app:assembleDebug -PuserlandUnsignedApk=true
+
+      - name: Assemble Release (unsigned)
+        run: ./gradlew --no-daemon :app:assembleRelease -PuserlandUnsignedApk=true
+
+      - name: Show APK paths
+        run: |
+          echo "Debug APKs:"
+          find app/build/outputs/apk/debug -type f -name "*.apk" -print || true
+          echo "Release APKs:"
+          find app/build/outputs/apk/release -type f -name "*.apk" -print || true
+
+      - name: Upload APK artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: florisboard-apks
+          path: |
+            app/build/outputs/apk/debug/*.apk
+            app/build/outputs/apk/release/*.apk
