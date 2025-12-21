@@ -36,12 +36,14 @@ class RiskMitigationModuleTest {
      * Used for latency measurement tests since measureTimeMillis uses wall-clock time.
      * 
      * @param iterations Number of iterations to perform (more = longer duration)
+     * @return The computed sum (returned to prevent compiler optimization of the loop)
      */
-    private fun performMeasurableWork(iterations: Int = 100_000) {
+    private fun performMeasurableWork(iterations: Int = 100_000): Double {
         var sum = 0.0
         repeat(iterations) { i ->
-            sum += Math.sin(i.toDouble())
+            sum += kotlin.math.sin(i.toDouble())
         }
+        return sum // Return to prevent compiler from optimizing away the computation
     }
     
     @Test
