@@ -5,6 +5,7 @@
 
 package org.florisboard.lib.zipraf
 
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -30,6 +31,19 @@ class RiskMitigationModuleTest {
         module.resetMetrics()
     }
     
+    /**
+     * Performs CPU-bound work that takes measurable wall-clock time.
+     * Used for latency measurement tests since measureTimeMillis uses wall-clock time.
+     * 
+     * @param iterations Number of iterations to perform (more = longer duration)
+     */
+    private fun performMeasurableWork(iterations: Int = 100_000) {
+        var sum = 0.0
+        repeat(iterations) { i ->
+            sum += Math.sin(i.toDouble())
+        }
+    }
+    
     @Test
     fun `test latency measurement within threshold`() = runTest {
         val (result, measurement) = module.measureLatency("fast_op", 100L) {
@@ -47,11 +61,7 @@ class RiskMitigationModuleTest {
         // Use actual computation instead of delay to properly measure wall-clock time
         // measureTimeMillis uses wall-clock, so we need real work, not virtual delay
         val (result, measurement) = module.measureLatency("slow_op", 1L) {
-            // Perform actual work that takes measurable time
-            var sum = 0.0
-            repeat(100_000) { i ->
-                sum += Math.sin(i.toDouble())
-            }
+            performMeasurableWork()
             "completed"
         }
         
@@ -154,11 +164,9 @@ class RiskMitigationModuleTest {
     
     @Test
     fun `test metrics collection`() = runTest {
-        // Generate some events
-        // Use actual computation for reliable timing measurement
+        // Generate some events using actual computation for reliable timing measurement
         module.measureLatency("op1", 1L) { 
-            var sum = 0.0
-            repeat(10_000) { i -> sum += Math.sin(i.toDouble()) }
+            performMeasurableWork(10_000)
             "result" 
         }
         module.checkFragmentation()
@@ -176,11 +184,7 @@ class RiskMitigationModuleTest {
         // Use actual computation instead of delay to properly measure wall-clock time
         repeat(3) {
             module.measureLatency("test_op", 10000L) {
-                // Perform actual work that takes measurable time
-                var sum = 0.0
-                repeat(10_000) { i ->
-                    sum += Math.sin(i.toDouble())
-                }
+                performMeasurableWork(10_000)
                 "result"
             }
         }
@@ -198,24 +202,29 @@ class RiskMitigationModuleTest {
     
     @Test
     fun `test risk event emission`() = runTest {
-        // Start collecting events - use drop to skip any old replay events from previous tests
+        // Use CompletableDeferred for proper synchronization between collector and emitter
+        val eventReceived = CompletableDeferred<RiskDetectionResult>()
+        
+        // Start collecting events - filter to only get events from this test's operation
         val eventJob = launch {
-            // Use filter to only get events from this test's operation
             val event = module.riskEvents.first { it.description.contains("emit_test") }
-            assertNotNull(event)
-            assertEquals(RiskType.LATENCY.name, event.riskType)
+            eventReceived.complete(event)
         }
         
-        // Give the collector time to start subscribing
-        kotlinx.coroutines.yield()
+        // Use CompletableDeferred to ensure collector is ready before emitting
+        // Small delay to allow collector to subscribe
+        delay(10)
         
         // Trigger event by exceeding threshold using actual computation
         module.measureLatency("emit_test", 1L) {
-            // Use Thread.sleep to ensure actual wall-clock time passes
-            // measureTimeMillis uses wall-clock time, not virtual time
-            Thread.sleep(10)
+            performMeasurableWork()
             "result"
         }
+        
+        // Wait for event with timeout
+        val event = eventReceived.await()
+        assertNotNull(event)
+        assertEquals(RiskType.LATENCY.name, event.riskType)
         
         eventJob.join()
     }
@@ -224,8 +233,7 @@ class RiskMitigationModuleTest {
     fun `test metrics reset`() = runTest {
         // Generate some data using actual computation for reliable timing
         module.measureLatency("op", 1L) { 
-            var sum = 0.0
-            repeat(100_000) { i -> sum += Math.sin(i.toDouble()) }
+            performMeasurableWork()
             "result" 
         }
         module.checkFragmentation()
