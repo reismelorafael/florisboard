@@ -22,11 +22,6 @@
 # Keep JNI classes from lib.native module to prevent runtime crashes
 -keep class org.florisboard.libnative.** { *; }
 
-# Android 15: Keep classes used via JNI reflection
--keepclasseswithmembers class * {
-    native <methods>;
-}
-
 # Prevent stripping of JNI registration functions
 -keepclassmembers class * {
     *** *JNI*(...);
@@ -107,14 +102,9 @@
 -keep class dev.patrickgold.florisboard.FlorisImeService { *; }
 -keep class dev.patrickgold.florisboard.FlorisSpellCheckerService { *; }
 
-# Android 15 specific: Keep foreground service types for better compatibility
+# Keep Service subclasses for proper initialization on all Android versions
 -keep class * extends android.app.Service {
     <init>(...);
-}
-
-# Keep notification channel classes for Android 15
--keep class * implements android.app.NotificationChannel {
-    *;
 }
 
 # Keep Parcelable implementations

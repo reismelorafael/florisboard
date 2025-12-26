@@ -56,8 +56,8 @@ add_dependencies(fl_native fl_native_rust_build)
 
 # Link with proper symbol resolution to prevent crashes from duplicate symbols
 # Using --whole-archive only for the Rust static library to ensure all symbols are included
-# Removed --allow-multiple-definition to catch potential symbol conflicts at build time
-# This improves runtime stability and prevents symbol resolution issues on Android 15
+# Proper symbol scoping with --no-whole-archive improves runtime stability
+# SHA1 build-id enables better crash stack trace analysis on ARM64 and all Android versions
 target_link_libraries(fl_native
     android log -Wl,--whole-archive ${FL_NATIVE_RUST_PATH} -Wl,--no-whole-archive -Wl,--build-id=sha1
 )
