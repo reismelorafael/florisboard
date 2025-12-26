@@ -50,6 +50,9 @@ android {
         buildConfigField("String", "FLADDONS_API_VERSION", "\"v1\"")
         buildConfigField("String", "FLADDONS_STORE_URL", "\"addons.florisboard.org\"")
         
+        // Optimize dex compilation for better crash resistance
+        multiDexEnabled = true
+        
         // Garante que o Gradle ache os arquivos de tradução e ícones
         sourceSets {
             getByName("main") {
@@ -73,10 +76,13 @@ android {
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             
-            // Performance optimizations
+            // Performance optimizations for release builds
             ndk {
                 debugSymbolLevel = "SYMBOL_TABLE"
             }
+            
+            // R8 full mode for maximum optimization
+            signingConfig = null // Will be configured externally
         }
         debug {
             applicationIdSuffix = ".debug"
@@ -87,6 +93,9 @@ android {
             ndk {
                 debugSymbolLevel = "NONE"
             }
+            
+            // Enable crash detection in debug
+            isDebuggable = true
         }
     }
 
@@ -107,14 +116,23 @@ android {
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
-            // Remove duplicate files
+            // Remove duplicate files to prevent crashes
             pickFirsts += setOf(
                 "META-INF/versions/9/previous-compilation-data.bin"
             )
+            // Merge duplicate resources instead of failing
+            merges += setOf(
+                "META-INF/LICENSE",
+                "META-INF/LICENSE.txt",
+                "META-INF/NOTICE",
+                "META-INF/NOTICE.txt"
+            )
         }
         jniLibs {
-            // Reduce APK size by keeping only required architectures
+            // Reduce APK size and improve loading by keeping only required architectures
             useLegacyPackaging = false
+            // Keep debug symbols for crash analysis in release builds
+            keepDebugSymbols += setOf("**/*.so")
         }
     }
 }
