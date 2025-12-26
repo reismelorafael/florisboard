@@ -168,7 +168,7 @@ PLATFORM_VERSION: 'android-36'
 }
 
 # Keep notification channel classes for Android 15
--keep class * implements android.app.NotificationChannel {
+-keep class android.app.NotificationChannel {
     *;
 }
 ```
