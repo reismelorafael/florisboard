@@ -11,8 +11,8 @@ on:
 
 env:
   ANDROID_SDK_ROOT: /usr/local/share/android-sdk
-  BUILD_TOOLS_VERSION: '34.0.0'
-  PLATFORM_VERSION: 'android-34'
+  BUILD_TOOLS_VERSION: '35.0.0'
+  PLATFORM_VERSION: 'android-36'
 
 jobs:
   build-and-verify:

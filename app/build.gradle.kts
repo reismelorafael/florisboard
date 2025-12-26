@@ -21,7 +21,13 @@ kotlin {
         freeCompilerArgs.set(listOf(
             "-opt-in=kotlin.RequiresOptIn",
             "-opt-in=kotlin.contracts.ExperimentalContracts",
-            "-Xjvm-default=all"
+            "-Xjvm-default=all",
+            // Global Kotlin/JVM optimization: disables runtime null-safety assertions
+            // for all build types and Android versions, improving performance but
+            // making NullPointerException debugging harder if they occur.
+            "-Xno-call-assertions",
+            "-Xno-param-assertions",
+            "-Xno-receiver-assertions"
         ))
     }
 }
@@ -99,6 +105,9 @@ android {
             
             // Enable crash detection in debug
             isDebuggable = true
+            
+            // Enable JNI debugging to improve native crash diagnostics during development
+            isJniDebuggable = true
         }
     }
 

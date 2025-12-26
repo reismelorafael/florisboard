@@ -54,7 +54,10 @@ add_custom_target(
 
 add_dependencies(fl_native fl_native_rust_build)
 
-# TODO: check if there's a better way than allowing multiple symbol definitions
+# Link with proper symbol resolution to prevent crashes from duplicate symbols
+# Using --whole-archive only for the Rust static library to ensure all symbols are included
+# Proper symbol scoping with --no-whole-archive improves runtime stability
+# SHA1 build-id enables better crash stack trace analysis on ARM64 and all Android versions
 target_link_libraries(fl_native
-    android log -Wl,--whole-archive -Wl,--allow-multiple-definition -Wl,--build-id=none ${FL_NATIVE_RUST_PATH}
+    android log -Wl,--whole-archive ${FL_NATIVE_RUST_PATH} -Wl,--no-whole-archive -Wl,--build-id=sha1
 )

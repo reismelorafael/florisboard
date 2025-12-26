@@ -19,6 +19,9 @@
     native <methods>;
 }
 
+# Keep JNI classes from lib.native module to prevent runtime crashes
+-keep class org.florisboard.libnative.** { *; }
+
 # Keep Android components to prevent lifecycle crashes
 -keep public class * extends android.app.Activity
 -keep public class * extends android.app.Service
@@ -93,6 +96,8 @@
 # Keep IME service classes to prevent keyboard crashes
 -keep class dev.patrickgold.florisboard.FlorisImeService { *; }
 -keep class dev.patrickgold.florisboard.FlorisSpellCheckerService { *; }
+
+# (Service subclasses are already fully kept by the rule at line 32.)
 
 # Keep Parcelable implementations
 -keep class * implements android.os.Parcelable {
