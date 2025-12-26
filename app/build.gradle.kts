@@ -21,7 +21,11 @@ kotlin {
         freeCompilerArgs.set(listOf(
             "-opt-in=kotlin.RequiresOptIn",
             "-opt-in=kotlin.contracts.ExperimentalContracts",
-            "-Xjvm-default=all"
+            "-Xjvm-default=all",
+            // Android 15 optimization: Improve runtime performance
+            "-Xno-call-assertions",
+            "-Xno-param-assertions",
+            "-Xno-receiver-assertions"
         ))
     }
 }
@@ -99,6 +103,9 @@ android {
             
             // Enable crash detection in debug
             isDebuggable = true
+            
+            // Android 15: Enable strict mode for better crash detection during development
+            isJniDebuggable = true
         }
     }
 
@@ -147,6 +154,8 @@ android {
             useLegacyPackaging = false
             // Keep debug symbols for crash analysis in release builds
             keepDebugSymbols += setOf("**/*.so")
+            // Android 15: Optimize native library extraction
+            excludes += setOf("**/libc++_shared.so")
         }
     }
 }

@@ -51,7 +51,9 @@ android {
         }
 
         ndk {
-            //abiFilters += listOf("armeabi-v7a", "arm64-v8a")
+            // Enable ABI filters for consistent ARM64/ARM32 builds
+            // Matches the main app configuration for proper library inclusion
+            abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86", "x86_64")
         }
     }
 
