@@ -22,7 +22,9 @@ kotlin {
             "-opt-in=kotlin.RequiresOptIn",
             "-opt-in=kotlin.contracts.ExperimentalContracts",
             "-Xjvm-default=all",
-            // Android 15 optimization: Improve runtime performance
+            // Global Kotlin/JVM optimization: disables runtime null-safety assertions
+            // for all build types and Android versions, improving performance but
+            // making NullPointerException debugging harder if they occur.
             "-Xno-call-assertions",
             "-Xno-param-assertions",
             "-Xno-receiver-assertions"
