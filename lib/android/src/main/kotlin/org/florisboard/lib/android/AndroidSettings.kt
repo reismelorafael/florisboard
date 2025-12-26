@@ -31,9 +31,9 @@ abstract class AndroidSettingsHelper(
     private val fieldCache: Map<String, String> by lazy {
         buildMap {
             for (field in kClass.java.declaredFields) {
-                if (Modifier.isStatic(field.modifiers) && Modifier.isPublic(field.modifiers)) {
+                if (Modifier.isStatic(field.modifiers)) {
                     tryOrNull {
-                        // Make field accessible in case it's not public
+                        // Make field accessible to handle both public and non-public fields
                         field.isAccessible = true
                         val value = field.get(null) as? String
                         if (value != null) {
@@ -56,7 +56,7 @@ abstract class AndroidSettingsHelper(
      * @return Sequence of field name to field value pairs
      */
     fun getAllKeys(): Sequence<Pair<String, String>> {
-        return fieldCache.asSequence().map { (key, value) -> key to value }
+        return fieldCache.entries.asSequence().map { it.toPair() }
     }
 
     fun observe(context: Context, key: String, observer: SystemSettingsObserver) {

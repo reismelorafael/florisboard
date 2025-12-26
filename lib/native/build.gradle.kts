@@ -51,7 +51,7 @@ android {
                     "-DANDROID_PLATFORM=android-$minSdk",
                 )
                 // Enable compiler flags for better debugging and optimization
-                cFlags("-Wall", "-Wextra")
+                cFlags("-Wall", "-Wextra", "-std=c11")
                 cppFlags("-Wall", "-Wextra", "-std=c++17")
             }
         }
