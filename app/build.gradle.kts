@@ -154,8 +154,6 @@ android {
             useLegacyPackaging = false
             // Keep debug symbols for crash analysis in release builds
             keepDebugSymbols += setOf("**/*.so")
-            // Android 15: Optimize native library extraction
-            excludes += setOf("**/libc++_shared.so")
         }
     }
 }
