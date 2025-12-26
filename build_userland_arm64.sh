@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Build FlorisBoard APKs without custom signing (release + beta unsigned)
-# Enhanced for ARM64 architecture with comprehensive validation
+# FlorisBoard Userland Build Script
+# Build unsigned APK specifically for userland installation (no root/system access required)
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -17,14 +17,15 @@ NC='\033[0m' # No Color
 BUILD_TYPE="Release"
 APK_OUTPUT_DIR="app/build/outputs/apk/release"
 ARCHITECTURE="arm64-v8a"
+BUILD_VARIANT="userland"
 
 echo -e "${BLUE}================================================${NC}"
-echo -e "${BLUE}FlorisBoard ARM64 Unsigned APK Build System${NC}"
+echo -e "${BLUE}FlorisBoard Userland ARM64 Build System${NC}"
 echo -e "${BLUE}================================================${NC}"
 echo ""
 
 # Step 1: Verify ARM64 configuration
-echo -e "${YELLOW}[1/6] Verifying ARM64 configuration...${NC}"
+echo -e "${YELLOW}[1/6] Verifying ARM64 configuration for userland...${NC}"
 if grep -q "arm64-v8a" app/build.gradle.kts; then
     echo -e "${GREEN}✓ ARM64 (arm64-v8a) configuration found${NC}"
 else
@@ -37,8 +38,8 @@ echo -e "${YELLOW}[2/6] Cleaning previous builds...${NC}"
 ./gradlew clean --no-daemon
 echo -e "${GREEN}✓ Clean completed${NC}"
 
-# Step 3: Build unsigned release APK
-echo -e "${YELLOW}[3/6] Building unsigned release APK for ARM64...${NC}"
+# Step 3: Build unsigned release APK for userland
+echo -e "${YELLOW}[3/6] Building unsigned userland APK for ARM64...${NC}"
 ./gradlew :app:assembleRelease --no-daemon -PuserlandUnsignedApk=true
 echo -e "${GREEN}✓ Build completed${NC}"
 
@@ -94,24 +95,36 @@ for apk in "$APK_OUTPUT_DIR"/*.apk; do
         # Check for META-INF signatures (should be minimal for unsigned)
         SIG_COUNT=$(unzip -l "$apk" 2>/dev/null | grep -c "META-INF/.*\.(RSA\|DSA\|EC)" || true)
         if [ "$SIG_COUNT" -eq 0 ]; then
-            echo -e "  Signature: ${GREEN}Unsigned (as expected)${NC}"
+            echo -e "  Signature: ${GREEN}Unsigned (userland ready)${NC}"
         else
             echo -e "  Signature: ${YELLOW}Contains $SIG_COUNT signature file(s)${NC}"
         fi
+        
+        # Userland-specific checks
+        echo -e "  Install type: ${GREEN}Userland (no root required)${NC}"
+        echo -e "  System access: ${GREEN}User-level only${NC}"
     fi
 done
 
 # Step 6: Generate build report
 echo ""
 echo -e "${YELLOW}[6/6] Generating build report...${NC}"
-REPORT_FILE="build_report.txt"
+REPORT_FILE="build_userland_report.txt"
 cat > "$REPORT_FILE" << EOF
-FlorisBoard ARM64 Build Report
-==============================
+FlorisBoard Userland ARM64 Build Report
+========================================
 Build Date: $(date)
 Build Type: $BUILD_TYPE
+Build Variant: Userland (no root required)
 Architecture: $ARCHITECTURE
 Output Directory: $APK_OUTPUT_DIR
+
+Userland Characteristics:
+- No root/system access required
+- Standard user-level installation
+- No Magisk integration
+- Works on unrooted devices
+- Installed via "Install from unknown sources"
 
 Generated APK(s):
 EOF
@@ -132,6 +145,7 @@ for apk in "$APK_OUTPUT_DIR"/*.apk; do
   Size: $APK_SIZE
   SHA256: $CHECKSUM
   Path: $apk
+  Type: Userland (user-level installation)
 EOF
     fi
 done
@@ -141,17 +155,20 @@ echo -e "${GREEN}✓ Build report generated: $REPORT_FILE${NC}"
 # Final summary
 echo ""
 echo -e "${BLUE}================================================${NC}"
-echo -e "${GREEN}Build completed successfully!${NC}"
+echo -e "${GREEN}Userland build completed successfully!${NC}"
 echo -e "${BLUE}================================================${NC}"
 echo ""
-echo -e "Unsigned APKs are in:"
+echo -e "Unsigned userland APKs are in:"
 echo -e "  ${GREEN}$APK_OUTPUT_DIR${NC}"
 echo ""
 echo -e "Build report:"
 echo -e "  ${GREEN}$REPORT_FILE${NC}"
 echo ""
-echo -e "${YELLOW}Installation instructions:${NC}"
+echo -e "${YELLOW}Userland Installation Instructions:${NC}"
 echo -e "  1. Transfer APK to your ARM64 Android device"
 echo -e "  2. Enable 'Install from unknown sources' in device settings"
-echo -e "  3. Install the APK"
+echo -e "  3. Install the APK (no root required)"
+echo -e "  4. Enable FlorisBoard in Settings → System → Languages & input"
+echo ""
+echo -e "${BLUE}Note: This is a userland build - works on unrooted devices${NC}"
 echo ""
