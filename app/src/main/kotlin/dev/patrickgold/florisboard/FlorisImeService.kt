@@ -278,33 +278,77 @@ class FlorisImeService : LifecycleInputMethodService() {
     override fun onCreate() {
         super.onCreate()
         FlorisImeServiceReference = WeakReference(this)
-        WindowCompat.setDecorFitsSystemWindows(window.window!!, false)
-        subtypeManager.activeSubtypeFlow.collectIn(lifecycleScope) { subtype ->
-            val config = Configuration(resources.configuration)
-            if (prefs.localization.displayKeyboardLabelsInSubtypeLanguage.get()) {
-                config.setLocale(subtype.primaryLocale.base)
+        
+        try {
+            WindowCompat.setDecorFitsSystemWindows(window.window!!, false)
+        } catch (e: Exception) {
+            flogError { "Failed to set window decorFitsSystemWindows: ${e.message}" }
+        }
+        
+        try {
+            subtypeManager.activeSubtypeFlow.collectIn(lifecycleScope) { subtype ->
+                try {
+                    val config = Configuration(resources.configuration)
+                    if (prefs.localization.displayKeyboardLabelsInSubtypeLanguage.get()) {
+                        config.setLocale(subtype.primaryLocale.base)
+                    }
+                    resourcesContext = createConfigurationContext(config)
+                } catch (e: Exception) {
+                    flogError { "Failed to update locale configuration: ${e.message}" }
+                }
             }
-            resourcesContext = createConfigurationContext(config)
+        } catch (e: Exception) {
+            flogError { "Failed to collect activeSubtypeFlow: ${e.message}" }
         }
-        prefs.localization.displayKeyboardLabelsInSubtypeLanguage.asFlow().collectIn(lifecycleScope) { shouldSync ->
-            val config = Configuration(resources.configuration)
-            if (shouldSync) {
-                config.setLocale(subtypeManager.activeSubtype.primaryLocale.base)
+        
+        try {
+            prefs.localization.displayKeyboardLabelsInSubtypeLanguage.asFlow().collectIn(lifecycleScope) { shouldSync ->
+                try {
+                    val config = Configuration(resources.configuration)
+                    if (shouldSync) {
+                        config.setLocale(subtypeManager.activeSubtype.primaryLocale.base)
+                    }
+                    resourcesContext = createConfigurationContext(config)
+                } catch (e: Exception) {
+                    flogError { "Failed to sync keyboard labels locale: ${e.message}" }
+                }
             }
-            resourcesContext = createConfigurationContext(config)
+        } catch (e: Exception) {
+            flogError { "Failed to collect displayKeyboardLabelsInSubtypeLanguage flow: ${e.message}" }
         }
-        prefs.physicalKeyboard.showOnScreenKeyboard.asFlow().collectIn(lifecycleScope) {
-            updateInputViewShown()
+        
+        try {
+            prefs.physicalKeyboard.showOnScreenKeyboard.asFlow().collectIn(lifecycleScope) {
+                updateInputViewShown()
+            }
+        } catch (e: Exception) {
+            flogError { "Failed to collect showOnScreenKeyboard flow: ${e.message}" }
         }
-        @Suppress("DEPRECATION") // We do not retrieve the wallpaper but only listen to changes
-        registerReceiver(wallpaperChangeReceiver, IntentFilter(Intent.ACTION_WALLPAPER_CHANGED))
+        
+        try {
+            @Suppress("DEPRECATION") // We do not retrieve the wallpaper but only listen to changes
+            registerReceiver(wallpaperChangeReceiver, IntentFilter(Intent.ACTION_WALLPAPER_CHANGED))
+        } catch (e: Exception) {
+            flogError { "Failed to register wallpaper change receiver: ${e.message}" }
+        }
     }
 
     override fun onCreateInputView(): View {
-        super.installViewTreeOwners()
+        try {
+            super.installViewTreeOwners()
+        } catch (e: Exception) {
+            flogError { "Failed to install view tree owners: ${e.message}" }
+        }
+        
         // Instantiate and install bottom sheet host UI view
-        val bottomSheetView = FlorisBottomSheetHostUiView()
-        window.window!!.findViewById<ViewGroup>(android.R.id.content).addView(bottomSheetView)
+        try {
+            val bottomSheetView = FlorisBottomSheetHostUiView()
+            window.window?.findViewById<ViewGroup>(android.R.id.content)?.addView(bottomSheetView)
+                ?: flogWarning { "Could not find content view to add bottom sheet" }
+        } catch (e: Exception) {
+            flogError { "Failed to create bottom sheet view: ${e.message}" }
+        }
+        
         // Instantiate and return input view
         val composeView = ComposeInputView()
         inputWindowView = composeView
@@ -317,21 +361,38 @@ class FlorisImeService : LifecycleInputMethodService() {
     }
 
     override fun onCreateExtractTextView(): View {
-        super.installViewTreeOwners()
+        try {
+            super.installViewTreeOwners()
+        } catch (e: Exception) {
+            flogError { "Failed to install view tree owners in extract view: ${e.message}" }
+        }
+        
         // Consider adding a fallback to the default extract edit layout if user reports come
         // that this causes a crash, especially if the device manufacturer of the user device
         // is a known one to break AOSP standards...
-        val defaultExtractView = super.onCreateExtractTextView()
+        val defaultExtractView = try {
+            super.onCreateExtractTextView()
+        } catch (e: Exception) {
+            flogError { "Failed to create default extract view: ${e.message}" }
+            return ComposeExtractedLandscapeInputView(null)
+        }
+        
         if (defaultExtractView == null || defaultExtractView !is ViewGroup) {
             return ComposeExtractedLandscapeInputView(null)
         }
-        val extractEditText = defaultExtractView.findViewById<ExtractEditText>(android.R.id.inputExtractEditText)
-        (extractEditText?.parent as? ViewGroup)?.removeView(extractEditText)
-        defaultExtractView.apply {
-            removeAllViews()
-            addView(ComposeExtractedLandscapeInputView(extractEditText))
+        
+        try {
+            val extractEditText = defaultExtractView.findViewById<ExtractEditText>(android.R.id.inputExtractEditText)
+            (extractEditText?.parent as? ViewGroup)?.removeView(extractEditText)
+            defaultExtractView.apply {
+                removeAllViews()
+                addView(ComposeExtractedLandscapeInputView(extractEditText))
+            }
+            return defaultExtractView
+        } catch (e: Exception) {
+            flogError { "Failed to customize extract view: ${e.message}" }
+            return ComposeExtractedLandscapeInputView(null)
         }
-        return defaultExtractView
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
@@ -341,7 +402,11 @@ class FlorisImeService : LifecycleInputMethodService() {
 
     override fun onDestroy() {
         super.onDestroy()
-        unregisterReceiver(wallpaperChangeReceiver)
+        try {
+            unregisterReceiver(wallpaperChangeReceiver)
+        } catch (e: Exception) {
+            flogError { "Failed to unregister wallpaper receiver: ${e.message}" }
+        }
         FlorisImeServiceReference = WeakReference(null)
         inputWindowView = null
     }
