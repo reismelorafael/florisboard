@@ -22,11 +22,6 @@
 # Keep JNI classes from lib.native module to prevent runtime crashes
 -keep class org.florisboard.libnative.** { *; }
 
-# Prevent stripping of JNI registration functions
--keepclassmembers class * {
-    *** *JNI*(...);
-}
-
 # Keep Android components to prevent lifecycle crashes
 -keep public class * extends android.app.Activity
 -keep public class * extends android.app.Service
