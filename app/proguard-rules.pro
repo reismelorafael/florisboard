@@ -97,10 +97,7 @@
 -keep class dev.patrickgold.florisboard.FlorisImeService { *; }
 -keep class dev.patrickgold.florisboard.FlorisSpellCheckerService { *; }
 
-# Keep Service subclasses for proper initialization on all Android versions
--keep class * extends android.app.Service {
-    <init>(...);
-}
+# (Service subclasses are already fully kept by the rule at line 32.)
 
 # Keep Parcelable implementations
 -keep class * implements android.os.Parcelable {
