@@ -250,7 +250,7 @@ class ErrorHandlingModule {
         return when (category) {
             ErrorCategory.SECURITY -> ErrorSeverity.CRITICAL
             ErrorCategory.DATA_CORRUPTION -> ErrorSeverity.CRITICAL
-            ErrorCategory.RESOURCE -> if (exception is OutOfMemoryError) ErrorSeverity.FATAL else ErrorSeverity.ERROR
+            ErrorCategory.RESOURCE -> ErrorSeverity.ERROR
             ErrorCategory.PERMISSION -> ErrorSeverity.ERROR
             ErrorCategory.NETWORK, ErrorCategory.TIMEOUT -> ErrorSeverity.WARNING
             ErrorCategory.VALIDATION -> ErrorSeverity.WARNING
