@@ -22,8 +22,8 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
 import android.content.IntentFilter
-import android.util.Log
 import android.os.Handler
+import android.util.Log
 import androidx.core.os.UserManagerCompat
 import androidx.core.content.ContextCompat
 import dev.patrickgold.florisboard.app.FlorisPreferenceModel
