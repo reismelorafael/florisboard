@@ -152,7 +152,7 @@ class FlorisApplication : Application() {
                         /* context = */ this,
                         /* receiver = */ BootComplete(),
                         /* filter = */ IntentFilter(Intent.ACTION_USER_UNLOCKED),
-                        /* flags = */ ContextCompat.RECEIVER_EXPORTED
+                        /* flags = */ ContextCompat.RECEIVER_NOT_EXPORTED
                     )
                 } catch (e: Exception) {
                     Log.e(TAG, "Failed to register boot completion receiver", e)

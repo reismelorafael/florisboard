@@ -365,7 +365,7 @@ class FlorisImeService : LifecycleInputMethodService() {
                 /* context = */ this,
                 /* receiver = */ wallpaperChangeReceiver,
                 /* filter = */ IntentFilter(Intent.ACTION_WALLPAPER_CHANGED),
-                /* flags = */ ContextCompat.RECEIVER_EXPORTED
+                /* flags = */ ContextCompat.RECEIVER_NOT_EXPORTED
             )
         } catch (e: Exception) {
             flogError { "Failed to register wallpaper change receiver: ${e.message}" }
