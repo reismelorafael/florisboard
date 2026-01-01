@@ -111,14 +111,24 @@ open class LifecycleInputMethodService : InputMethodService(),
         super.onWindowShown()
         if (isDestroyed.get()) return
         
-        val currentState = lifecycleState.get()
-        if (currentState >= STATE_STARTED && currentState < STATE_RESUMED) {
-            if (lifecycleState.compareAndSet(currentState, STATE_RESUMED)) {
-                lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
-            }
-        } else if (currentState == STATE_PAUSED) {
-            if (lifecycleState.compareAndSet(STATE_PAUSED, STATE_RESUMED)) {
-                lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
+        // Use loop with CAS for atomic state transition
+        while (true) {
+            val currentState = lifecycleState.get()
+            if (currentState >= STATE_STARTED && currentState < STATE_RESUMED) {
+                if (lifecycleState.compareAndSet(currentState, STATE_RESUMED)) {
+                    lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
+                    break
+                }
+                // CAS failed, retry with fresh state
+            } else if (currentState == STATE_PAUSED) {
+                if (lifecycleState.compareAndSet(STATE_PAUSED, STATE_RESUMED)) {
+                    lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
+                    break
+                }
+                // CAS failed, retry with fresh state
+            } else {
+                // State already resumed or invalid, no action needed
+                break
             }
         }
     }
@@ -128,6 +138,7 @@ open class LifecycleInputMethodService : InputMethodService(),
         super.onWindowHidden()
         if (isDestroyed.get()) return
         
+        // Use CAS for atomic state transition
         if (lifecycleState.compareAndSet(STATE_RESUMED, STATE_PAUSED)) {
             lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_PAUSE)
         }
@@ -141,14 +152,24 @@ open class LifecycleInputMethodService : InputMethodService(),
             return
         }
         
-        val currentState = lifecycleState.get()
-        
-        // Handle proper state transitions based on current state
-        if (currentState == STATE_RESUMED) {
-            lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_PAUSE)
-        }
-        if (currentState >= STATE_STARTED && currentState < STATE_STOPPED) {
-            lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_STOP)
+        // Use loop with CAS for atomic state transitions
+        while (true) {
+            val currentState = lifecycleState.get()
+            
+            // Handle proper state transitions based on current state
+            if (currentState == STATE_RESUMED) {
+                if (lifecycleState.compareAndSet(STATE_RESUMED, STATE_PAUSED)) {
+                    lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_PAUSE)
+                    // Continue to stop state
+                }
+            } else if (currentState >= STATE_STARTED && currentState < STATE_STOPPED) {
+                if (lifecycleState.compareAndSet(currentState, STATE_STOPPED)) {
+                    lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_STOP)
+                    break
+                }
+            } else {
+                break
+            }
         }
         
         lifecycleState.set(STATE_DESTROYED)

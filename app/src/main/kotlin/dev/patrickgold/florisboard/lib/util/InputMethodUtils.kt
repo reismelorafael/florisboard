@@ -133,13 +133,13 @@ object InputMethodUtils {
 
     /**
      * Parses enabled IME list string to check if FlorisBoard is enabled.
-     * Uses matrix-style iteration for deterministic parsing.
+     * Iterates through component strings with early exit on match.
      */
     fun parseIsFlorisboardEnabled(context: Context, activeImeIds: String): Boolean {
         val components = activeImeIds.split(DELIMITER)
         val targetPkg = context.packageName
         
-        // Matrix-style iteration with early exit
+        // Iterate through components with early exit on match
         for (i in components.indices) {
             val component = ComponentName.unflattenFromString(components[i])
             if (component?.packageName == targetPkg && component.className == IME_SERVICE_CLASS_NAME) {

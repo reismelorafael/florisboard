@@ -210,6 +210,7 @@ data class PerformanceMetrics(
  */
 class Matrix(val rows: Int, val cols: Int) {
     // Flat array for cache efficiency (row-major order)
+    // @PublishedApi is required for the inline transformInPlace function
     @PublishedApi
     internal val data = DoubleArray(rows * cols)
     
