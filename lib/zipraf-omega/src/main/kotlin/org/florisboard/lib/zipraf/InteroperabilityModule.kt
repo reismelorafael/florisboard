@@ -273,19 +273,30 @@ class InteroperabilityModule {
     ): List<InteropMigrationStep> {
         if (source == target) return emptyList()
         
-        // Simple linear path search
+        // Simple linear path search with cycle detection
         val path = mutableListOf<InteropMigrationStep>()
         var current = source.toString()
+        val visited = mutableSetOf<String>()
         
         while (current != target.toString()) {
+            // Prevent infinite loops from circular migration paths
+            if (current in visited) {
+                android.util.Log.w("InteroperabilityModule", "Circular migration path detected at version: $current")
+                break
+            }
+            visited.add(current)
+            
             val step = migrationSteps.find { it.fromVersion == current }
             if (step == null) break
             
             path.add(step)
             current = step.toVersion
             
-            // Prevent infinite loops
-            if (path.size > 100) break
+            // Prevent infinite loops with maximum path length
+            if (path.size > 100) {
+                android.util.Log.w("InteroperabilityModule", "Migration path exceeded maximum length of 100 steps")
+                break
+            }
         }
         
         return if (current == target.toString()) path else emptyList()

@@ -82,14 +82,27 @@ open class LifecycleInputMethodService : InputMethodService(),
         super.onCreate()
         if (isDestroyed.get()) return
         
-        savedStateRegistryController.performRestore(null)
+        try {
+            savedStateRegistryController.performRestore(null)
+        } catch (e: Exception) {
+            // Defensive error handling for Android 15 compatibility
+            android.util.Log.e("LifecycleIMS", "Error restoring saved state", e)
+        }
         
-        // Deterministic lifecycle event sequencing
+        // Deterministic lifecycle event sequencing with error handling
         if (lifecycleState.compareAndSet(STATE_INITIAL, STATE_CREATED)) {
-            lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_CREATE)
+            try {
+                lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_CREATE)
+            } catch (e: Exception) {
+                android.util.Log.e("LifecycleIMS", "Error handling ON_CREATE event", e)
+            }
         }
         if (lifecycleState.compareAndSet(STATE_CREATED, STATE_STARTED)) {
-            lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_START)
+            try {
+                lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_START)
+            } catch (e: Exception) {
+                android.util.Log.e("LifecycleIMS", "Error handling ON_START event", e)
+            }
         }
     }
 
@@ -100,10 +113,18 @@ open class LifecycleInputMethodService : InputMethodService(),
     fun installViewTreeOwners() {
         if (isDestroyed.get()) return
         
-        val decorView = window?.window?.decorView ?: return
-        decorView.setViewTreeLifecycleOwner(this)
-        decorView.setViewTreeViewModelStoreOwner(this)
-        decorView.setViewTreeSavedStateRegistryOwner(this)
+        try {
+            val decorView = window?.window?.decorView ?: run {
+                android.util.Log.w("LifecycleIMS", "Unable to install view tree owners: decorView is null")
+                return
+            }
+            decorView.setViewTreeLifecycleOwner(this)
+            decorView.setViewTreeViewModelStoreOwner(this)
+            decorView.setViewTreeSavedStateRegistryOwner(this)
+        } catch (e: Exception) {
+            // Defensive error handling for Android 15 compatibility
+            android.util.Log.e("LifecycleIMS", "Error installing view tree owners", e)
+        }
     }
 
     @CallSuper
@@ -111,25 +132,45 @@ open class LifecycleInputMethodService : InputMethodService(),
         super.onWindowShown()
         if (isDestroyed.get()) return
         
-        // Use loop with CAS for atomic state transition
-        while (true) {
+        // Use loop with CAS for atomic state transition with timeout protection
+        var attempts = 0
+        val maxAttempts = 10 // Prevent infinite loop on Android 15
+        
+        while (attempts < maxAttempts) {
             val currentState = lifecycleState.get()
             if (currentState >= STATE_STARTED && currentState < STATE_RESUMED) {
                 if (lifecycleState.compareAndSet(currentState, STATE_RESUMED)) {
-                    lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
+                    try {
+                        lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
+                    } catch (e: Exception) {
+                        // Defensive error handling for Android 15 compatibility
+                        android.util.Log.e("LifecycleIMS", "Error handling ON_RESUME event", e)
+                    }
                     break
                 }
                 // CAS failed, retry with fresh state
+                attempts++
             } else if (currentState == STATE_PAUSED) {
                 if (lifecycleState.compareAndSet(STATE_PAUSED, STATE_RESUMED)) {
-                    lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
+                    try {
+                        lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
+                    } catch (e: Exception) {
+                        // Defensive error handling for Android 15 compatibility
+                        android.util.Log.e("LifecycleIMS", "Error handling ON_RESUME event", e)
+                    }
                     break
                 }
                 // CAS failed, retry with fresh state
+                attempts++
             } else {
                 // State already resumed or invalid, no action needed
                 break
             }
+        }
+        
+        // Log warning if we hit the retry limit
+        if (attempts >= maxAttempts) {
+            android.util.Log.w("LifecycleIMS", "CAS retry limit reached in onWindowShown, current state: ${lifecycleState.get()}")
         }
     }
 
@@ -138,9 +179,14 @@ open class LifecycleInputMethodService : InputMethodService(),
         super.onWindowHidden()
         if (isDestroyed.get()) return
         
-        // Use CAS for atomic state transition
+        // Use CAS for atomic state transition with error handling
         if (lifecycleState.compareAndSet(STATE_RESUMED, STATE_PAUSED)) {
-            lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_PAUSE)
+            try {
+                lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_PAUSE)
+            } catch (e: Exception) {
+                // Defensive error handling for Android 15 compatibility
+                android.util.Log.e("LifecycleIMS", "Error handling ON_PAUSE event", e)
+            }
         }
     }
 
@@ -152,31 +198,61 @@ open class LifecycleInputMethodService : InputMethodService(),
             return
         }
         
-        // Use loop with CAS for atomic state transitions
-        while (true) {
+        // Use loop with CAS for atomic state transitions with timeout protection
+        var attempts = 0
+        val maxAttempts = 10 // Prevent infinite loop on Android 15
+        
+        while (attempts < maxAttempts) {
             val currentState = lifecycleState.get()
             
             // Handle proper state transitions based on current state
             if (currentState == STATE_RESUMED) {
                 if (lifecycleState.compareAndSet(STATE_RESUMED, STATE_PAUSED)) {
-                    lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_PAUSE)
+                    try {
+                        lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_PAUSE)
+                    } catch (e: Exception) {
+                        // Defensive error handling for Android 15 compatibility
+                        android.util.Log.e("LifecycleIMS", "Error handling ON_PAUSE event in onDestroy", e)
+                    }
                     // Continue to stop state
                 }
+                attempts++
             } else if (currentState >= STATE_STARTED && currentState < STATE_STOPPED) {
                 if (lifecycleState.compareAndSet(currentState, STATE_STOPPED)) {
-                    lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_STOP)
+                    try {
+                        lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_STOP)
+                    } catch (e: Exception) {
+                        // Defensive error handling for Android 15 compatibility
+                        android.util.Log.e("LifecycleIMS", "Error handling ON_STOP event in onDestroy", e)
+                    }
                     break
                 }
+                attempts++
             } else {
                 break
             }
         }
         
+        // Log warning if we hit the retry limit
+        if (attempts >= maxAttempts) {
+            android.util.Log.w("LifecycleIMS", "CAS retry limit reached in onDestroy, current state: ${lifecycleState.get()}")
+        }
+        
         lifecycleState.set(STATE_DESTROYED)
-        lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
+        try {
+            lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
+        } catch (e: Exception) {
+            // Defensive error handling for Android 15 compatibility
+            android.util.Log.e("LifecycleIMS", "Error handling ON_DESTROY event", e)
+        }
         
         // Clear ViewModelStore to release resources
-        store.clear()
+        try {
+            store.clear()
+        } catch (e: Exception) {
+            // Defensive error handling for cleanup operations
+            android.util.Log.e("LifecycleIMS", "Error clearing ViewModelStore", e)
+        }
         
         super.onDestroy()
     }
