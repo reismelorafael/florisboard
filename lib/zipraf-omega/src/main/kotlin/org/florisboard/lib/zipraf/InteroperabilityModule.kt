@@ -104,6 +104,11 @@ data class InteropMigrationStep(
  */
 class InteroperabilityModule {
     
+    companion object {
+        // Maximum migration path length to prevent infinite loops
+        private const val MAX_MIGRATION_PATH_LENGTH = 100
+    }
+    
     private val knownVersions = mutableSetOf<SemanticVersion>()
     private val migrationSteps = mutableListOf<InteropMigrationStep>()
     private val schemas = mutableMapOf<String, SchemaVersion>()
@@ -293,8 +298,8 @@ class InteroperabilityModule {
             current = step.toVersion
             
             // Prevent infinite loops with maximum path length
-            if (path.size > 100) {
-                android.util.Log.w("InteroperabilityModule", "Migration path exceeded maximum length of 100 steps")
+            if (path.size > MAX_MIGRATION_PATH_LENGTH) {
+                android.util.Log.w("InteroperabilityModule", "Migration path exceeded maximum length of $MAX_MIGRATION_PATH_LENGTH steps")
                 break
             }
         }

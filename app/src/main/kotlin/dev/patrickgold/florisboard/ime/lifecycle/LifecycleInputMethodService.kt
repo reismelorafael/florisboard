@@ -59,6 +59,9 @@ open class LifecycleInputMethodService : InputMethodService(),
         private const val STATE_PAUSED = 4
         private const val STATE_STOPPED = 5
         private const val STATE_DESTROYED = 6
+        
+        // Maximum CAS retry attempts to prevent infinite loops on Android 15
+        private const val MAX_CAS_ATTEMPTS = 10
     }
     
     private val lifecycleRegistry by lazy { LifecycleRegistry(this) }
@@ -134,9 +137,8 @@ open class LifecycleInputMethodService : InputMethodService(),
         
         // Use loop with CAS for atomic state transition with timeout protection
         var attempts = 0
-        val maxAttempts = 10 // Prevent infinite loop on Android 15
         
-        while (attempts < maxAttempts) {
+        while (attempts < MAX_CAS_ATTEMPTS) {
             val currentState = lifecycleState.get()
             if (currentState >= STATE_STARTED && currentState < STATE_RESUMED) {
                 if (lifecycleState.compareAndSet(currentState, STATE_RESUMED)) {
@@ -149,7 +151,6 @@ open class LifecycleInputMethodService : InputMethodService(),
                     break
                 }
                 // CAS failed, retry with fresh state
-                attempts++
             } else if (currentState == STATE_PAUSED) {
                 if (lifecycleState.compareAndSet(STATE_PAUSED, STATE_RESUMED)) {
                     try {
@@ -161,15 +162,15 @@ open class LifecycleInputMethodService : InputMethodService(),
                     break
                 }
                 // CAS failed, retry with fresh state
-                attempts++
             } else {
                 // State already resumed or invalid, no action needed
                 break
             }
+            attempts++
         }
         
         // Log warning if we hit the retry limit
-        if (attempts >= maxAttempts) {
+        if (attempts >= MAX_CAS_ATTEMPTS) {
             android.util.Log.w("LifecycleIMS", "CAS retry limit reached in onWindowShown, current state: ${lifecycleState.get()}")
         }
     }
@@ -200,9 +201,8 @@ open class LifecycleInputMethodService : InputMethodService(),
         
         // Use loop with CAS for atomic state transitions with timeout protection
         var attempts = 0
-        val maxAttempts = 10 // Prevent infinite loop on Android 15
         
-        while (attempts < maxAttempts) {
+        while (attempts < MAX_CAS_ATTEMPTS) {
             val currentState = lifecycleState.get()
             
             // Handle proper state transitions based on current state
@@ -216,7 +216,6 @@ open class LifecycleInputMethodService : InputMethodService(),
                     }
                     // Continue to stop state
                 }
-                attempts++
             } else if (currentState >= STATE_STARTED && currentState < STATE_STOPPED) {
                 if (lifecycleState.compareAndSet(currentState, STATE_STOPPED)) {
                     try {
@@ -227,14 +226,14 @@ open class LifecycleInputMethodService : InputMethodService(),
                     }
                     break
                 }
-                attempts++
             } else {
                 break
             }
+            attempts++
         }
         
         // Log warning if we hit the retry limit
-        if (attempts >= maxAttempts) {
+        if (attempts >= MAX_CAS_ATTEMPTS) {
             android.util.Log.w("LifecycleIMS", "CAS retry limit reached in onDestroy, current state: ${lifecycleState.get()}")
         }
         
