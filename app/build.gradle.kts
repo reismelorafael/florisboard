@@ -63,10 +63,11 @@ android {
         // Optimize dex compilation for better crash resistance
         multiDexEnabled = true
         
-        // Garante que o Gradle ache os arquivos de tradução e ícones
+        // Garante que o Gradle ache os arquivos de tradução, ícones e recursos
         sourceSets {
             getByName("main") {
                 assets.srcDirs("src/main/assets")
+                res.srcDirs("src/main/res")
             }
         }
     }
