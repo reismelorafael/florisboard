@@ -123,6 +123,7 @@ class RiskMitigationModule {
     
     // Process tracking for zombie detection
     private val activeProcesses = ConcurrentHashMap<String, ZombieProcess>()
+    private val processRegistrationLock = Any()
     private val zombieDetectionThresholdMs = 300_000L // 5 minutes of inactivity
     private val maxActiveProcesses = 32
     private val taskParallelism = 24
@@ -273,7 +274,25 @@ class RiskMitigationModule {
      * @param processName Human-readable name
      */
     fun registerProcess(processId: String, processName: String): Boolean {
-        if (activeProcesses.size >= maxActiveProcesses) {
+        var shouldEmitLimitBreach = false
+        var activeProcessCountAtLimit = 0
+        synchronized(processRegistrationLock) {
+            if (activeProcesses.size >= maxActiveProcesses) {
+                shouldEmitLimitBreach = true
+                activeProcessCountAtLimit = activeProcesses.size
+            } else {
+                val now = System.currentTimeMillis()
+                activeProcesses[processId] = ZombieProcess(
+                    processId = processId,
+                    name = processName,
+                    createdAt = now,
+                    lastActivityAt = now,
+                    idleTimeMs = 0,
+                    isZombie = false
+                )
+            }
+        }
+        if (shouldEmitLimitBreach) {
             processLimitBreaches.incrementAndGet()
             _riskEvents.tryEmit(
                 RiskDetectionResult(
@@ -284,21 +303,12 @@ class RiskMitigationModule {
                     mitigation = "Reduce concurrent processes or defer task execution",
                     metrics = mapOf(
                         "max_active_processes" to maxActiveProcesses.toDouble(),
-                        "active_processes" to activeProcesses.size.toDouble()
+                        "active_processes" to activeProcessCountAtLimit.toDouble()
                     )
                 )
             )
             return false
         }
-        val now = System.currentTimeMillis()
-        activeProcesses[processId] = ZombieProcess(
-            processId = processId,
-            name = processName,
-            createdAt = now,
-            lastActivityAt = now,
-            idleTimeMs = 0,
-            isZombie = false
-        )
         return true
     }
     
