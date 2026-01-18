@@ -124,6 +124,7 @@ class RiskMitigationModule {
     
     // Process tracking for zombie detection
     private val activeProcesses = ConcurrentHashMap<String, ZombieProcess>()
+    private val processRegistrationLock = Any()
     private val zombieDetectionThresholdMs = 300_000L // 5 minutes of inactivity
     private val maxActiveProcesses = 32
     private val processSlots = Semaphore(maxActiveProcesses, true)
@@ -279,6 +280,25 @@ class RiskMitigationModule {
             return true
         }
         if (!processSlots.tryAcquire()) {
+        var shouldEmitLimitBreach = false
+        var activeProcessCountAtLimit = 0
+        synchronized(processRegistrationLock) {
+            if (activeProcesses.size >= maxActiveProcesses) {
+                shouldEmitLimitBreach = true
+                activeProcessCountAtLimit = activeProcesses.size
+            } else {
+                val now = System.currentTimeMillis()
+                activeProcesses[processId] = ZombieProcess(
+                    processId = processId,
+                    name = processName,
+                    createdAt = now,
+                    lastActivityAt = now,
+                    idleTimeMs = 0,
+                    isZombie = false
+                )
+            }
+        }
+        if (shouldEmitLimitBreach) {
             processLimitBreaches.incrementAndGet()
             _riskEvents.tryEmit(
                 RiskDetectionResult(
@@ -290,6 +310,7 @@ class RiskMitigationModule {
                     metrics = mapOf(
                         "max_active_processes" to maxActiveProcesses.toDouble(),
                         "active_processes" to activeProcesses.size.toDouble()
+                        "active_processes" to activeProcessCountAtLimit.toDouble()
                     )
                 )
             )
@@ -501,6 +522,30 @@ class RiskMitigationModule {
         val missingPermits = maxActiveProcesses - processSlots.availablePermits()
         if (missingPermits > 0) {
             processSlots.release(missingPermits)
+        }
+    }
+
+    /**
+     * Execute a task using the bounded thread pool and registered process tracking.
+     *
+     * @param processId Unique identifier for the process
+     * @param processName Human-readable name
+     * @param task The task to execute
+     * @return Task result or null if execution was rejected due to process limit
+     */
+    suspend fun <T> runTaskAsProcess(
+        processId: String,
+        processName: String,
+        task: suspend () -> T
+    ): T? {
+        if (!registerProcess(processId, processName)) {
+            return null
+        }
+
+        return try {
+            withContext(taskDispatcher) { task() }
+        } finally {
+            unregisterProcess(processId)
         }
     }
 
