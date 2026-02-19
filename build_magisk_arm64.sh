@@ -21,6 +21,10 @@ ARCHITECTURE="arm64-v8a"
 BUILD_VARIANT="magisk"
 MAGISK_MODULE_DIR="magisk_module"
 
+# Shared project version from single source of truth
+PROJECT_VERSION_CODE=$(grep "^projectVersionCode=" gradle.properties | cut -d'=' -f2)
+PROJECT_VERSION_NAME=$(grep "^projectVersionName=" gradle.properties | cut -d'=' -f2)
+
 echo -e "${BLUE}================================================${NC}"
 echo -e "${BLUE}FlorisBoard Magisk Module Build System${NC}"
 echo -e "${BLUE}================================================${NC}"
@@ -118,11 +122,11 @@ if [ -n "$APK_FILE" ]; then
 fi
 
 # Create module.prop
-cat > "$MAGISK_MODULE_DIR/module.prop" << 'EOF'
+cat > "$MAGISK_MODULE_DIR/module.prop" << EOF
 id=florisboard_arm64
 name=FlorisBoard ARM64
-version=0.4.0
-versionCode=85
+version=${PROJECT_VERSION_NAME}
+versionCode=${PROJECT_VERSION_CODE}
 author=FlorisBoard Contributors
 description=FlorisBoard keyboard for ARM64 devices - installed as system app via Magisk
 EOF

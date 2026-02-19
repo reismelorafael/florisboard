@@ -27,10 +27,13 @@ plugins {
 
 val projectMinSdk: String by project
 val projectCompileSdk: String by project
+val jdkVersion = tools.versions.jdk.get().toInt()
+val javaVersion = JavaVersion.toVersion(jdkVersion)
 
 kotlin {
+    jvmToolchain(jdkVersion)
     compilerOptions {
-        jvmTarget.set(JvmTarget.JVM_17)
+        jvmTarget.set(JvmTarget.fromTarget(jdkVersion.toString()))
         freeCompilerArgs.set(listOf(
             "-Xconsistent-data-class-copy-visibility",
             "-Xwhen-guards",
@@ -69,8 +72,8 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = javaVersion
+        targetCompatibility = javaVersion
     }
 }
 

@@ -14,10 +14,13 @@ plugins {
 val projectMinSdk: String by project
 val projectTargetSdk: String by project
 val projectCompileSdk: String by project
+val jdkVersion = tools.versions.jdk.get().toInt()
+val javaVersion = JavaVersion.toVersion(jdkVersion)
 
 kotlin {
+    jvmToolchain(jdkVersion)
     compilerOptions {
-        jvmTarget.set(JvmTarget.JVM_17)
+        jvmTarget.set(JvmTarget.fromTarget(jdkVersion.toString()))
         freeCompilerArgs.set(listOf(
             "-opt-in=kotlin.RequiresOptIn",
             "-opt-in=kotlin.contracts.ExperimentalContracts",
@@ -35,16 +38,15 @@ kotlin {
 android {
     namespace = "dev.patrickgold.florisboard"
     compileSdk = projectCompileSdk.toInt()
-    
-    // Configure build tools version for stability
-    buildToolsVersion = "35.0.0"
+    buildToolsVersion = tools.versions.buildTools.get()
+    ndkVersion = tools.versions.ndk.get()
 
     defaultConfig {
         applicationId = "dev.patrickgold.florisboard"
         minSdk = projectMinSdk.toInt()
         targetSdk = projectTargetSdk.toInt()
-        versionCode = 85
-        versionName = "0.4.0-bypassed"
+        versionCode = projectVersionCode.toInt()
+        versionName = projectVersionName
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         vectorDrawables {
@@ -63,12 +65,6 @@ android {
         // Optimize dex compilation for better crash resistance
         multiDexEnabled = true
         
-        // Garante que o Gradle ache os arquivos de tradução e ícones
-        sourceSets {
-            getByName("main") {
-                assets.srcDirs("src/main/assets")
-            }
-        }
     }
 
     lint {
@@ -112,9 +108,16 @@ android {
         }
     }
 
+    // Garante que o Gradle ache os arquivos de tradução e ícones
+    sourceSets {
+        getByName("main") {
+            assets.srcDirs("src/main/assets")
+        }
+    }
+
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = javaVersion
+        targetCompatibility = javaVersion
         isCoreLibraryDesugaringEnabled = false
     }
     

@@ -11,10 +11,13 @@ plugins {
 val projectMinSdk: String by project
 val projectTargetSdk: String by project
 val projectCompileSdk: String by project
+val jdkVersion = tools.versions.jdk.get().toInt()
+val javaVersion = JavaVersion.toVersion(jdkVersion)
 
 kotlin {
+    jvmToolchain(jdkVersion)
     compilerOptions {
-        jvmTarget.set(JvmTarget.JVM_11)
+        jvmTarget.set(JvmTarget.fromTarget(jdkVersion.toString()))
     }
 }
 
@@ -23,8 +26,8 @@ android {
     compileSdk = projectCompileSdk.toInt()
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = javaVersion
+        targetCompatibility = javaVersion
     }
 
     defaultConfig {

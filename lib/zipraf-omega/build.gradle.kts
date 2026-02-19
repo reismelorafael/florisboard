@@ -22,20 +22,28 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 
+val jdkVersion = tools.versions.jdk.get().toInt()
+val javaVersion = JavaVersion.toVersion(jdkVersion)
+
+
+kotlin {
+    jvmToolchain(jdkVersion)
+}
+
 java {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
+    sourceCompatibility = javaVersion
+    targetCompatibility = javaVersion
 }
 
 tasks {
     compileKotlin {
-        compilerOptions.jvmTarget = JvmTarget.JVM_17
+        compilerOptions.jvmTarget = JvmTarget.fromTarget(jdkVersion.toString())
         compilerOptions.freeCompilerArgs = listOf(
             "-Xjvm-default=all"
         )
     }
     compileTestKotlin {
-        compilerOptions.jvmTarget = JvmTarget.JVM_17
+        compilerOptions.jvmTarget = JvmTarget.fromTarget(jdkVersion.toString())
     }
 }
 
