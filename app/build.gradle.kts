@@ -63,12 +63,6 @@ android {
         // Optimize dex compilation for better crash resistance
         multiDexEnabled = true
         
-        // Garante que o Gradle ache os arquivos de tradução e ícones
-        sourceSets {
-            getByName("main") {
-                assets.srcDirs("src/main/assets")
-            }
-        }
     }
 
     lint {
@@ -109,6 +103,13 @@ android {
             
             // Enable JNI debugging to improve native crash diagnostics during development
             isJniDebuggable = true
+        }
+    }
+
+    // Garante que o Gradle ache os arquivos de tradução e ícones
+    sourceSets {
+        getByName("main") {
+            assets.srcDirs("src/main/assets")
         }
     }
 
