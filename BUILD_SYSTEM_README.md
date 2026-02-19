@@ -160,6 +160,17 @@ Build system improvements:
 
 ---
 
+## 🔧 Android Toolchain Source of Truth
+
+All Android toolchain versions are centralized in `gradle/tools.versions.toml` and must not be duplicated as literals in module build scripts.
+
+- `versions.jdk` → Kotlin toolchain + `compileOptions` (Java source/target) for all Android/JVM modules.
+- `versions.buildTools` → `android.buildToolsVersion` (app module).
+- `versions.ndk` → `android.ndkVersion` (modules with JNI/native usage).
+- `versions.cmake` → `externalNativeBuild.cmake.version` (native modules).
+
+When updating Android toolchain versions, change only `gradle/tools.versions.toml`.
+
 ## 📊 Build Configuration
 
 ### Version Info

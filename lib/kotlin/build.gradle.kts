@@ -22,13 +22,21 @@ plugins {
     alias(libs.plugins.kotlinx.kover)
 }
 
+val jdkVersion = tools.versions.jdk.get().toInt()
+val javaVersion = JavaVersion.toVersion(jdkVersion)
+
 val projectGroupId: String by project
 val artifactId = "florisboard-lib-kotlin"
 val projectVersion: String by project
 
+
+kotlin {
+    jvmToolchain(jdkVersion)
+}
+
 java {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
+    sourceCompatibility = javaVersion
+    targetCompatibility = javaVersion
 }
 
 sourceSets {
@@ -39,14 +47,14 @@ sourceSets {
 
 tasks {
     compileKotlin {
-        compilerOptions.jvmTarget = JvmTarget.JVM_17
+        compilerOptions.jvmTarget = JvmTarget.fromTarget(jdkVersion.toString())
         compilerOptions.freeCompilerArgs = listOf(
             "-opt-in=kotlin.contracts.ExperimentalContracts",
             "-Xjvm-default=all",
         )
     }
     compileTestKotlin {
-        compilerOptions.jvmTarget = JvmTarget.JVM_17
+        compilerOptions.jvmTarget = JvmTarget.fromTarget(jdkVersion.toString())
     }
 }
 

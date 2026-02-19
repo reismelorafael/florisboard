@@ -1,36 +1,37 @@
-// Arquivo opcional: gradle/toolchain.gradle.kts
-// Instrução de uso: aplicar no root build.gradle.kts com:
-// apply(from = "gradle/toolchain.gradle.kts")
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+// Deprecated helper script.
+// This project now configures Android/Kotlin toolchains directly in each module
+// using gradle/tools.versions.toml as single source of truth.
+//
+// Kept only for backward compatibility in local environments that still call:
+//   apply(from = "gradle/toolchain.gradle.kts")
 
-// Força kotlin/java toolchain para todos os módulos Kotlin/Android
-kotlin {
-    jvmToolchain(17)
-}
+val jdkVersion = tools.versions.jdk.get().toInt()
+val javaVersion = JavaVersion.toVersion(jdkVersion)
 
 subprojects {
-    // Para projetos Android: forçar compatibilidade Java
-    plugins.withId("com.android.application") {
-        extensions.configure<com.android.build.gradle.BaseExtension>("android") {
-            compileOptions {
-                sourceCompatibility = JavaVersion.VERSION_17
-                targetCompatibility = JavaVersion.VERSION_17
-            }
-        }
-    }
-    plugins.withId("com.android.library") {
-        extensions.configure<com.android.build.gradle.BaseExtension>("android") {
-            compileOptions {
-                sourceCompatibility = JavaVersion.VERSION_17
-                targetCompatibility = JavaVersion.VERSION_17
-            }
+    plugins.withId("org.jetbrains.kotlin.android") {
+        extensions.findByName("kotlin")?.let {
+            (it as org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension).jvmToolchain(jdkVersion)
         }
     }
 
-    // Para projetos Kotlin/JVM puros:
     plugins.withId("org.jetbrains.kotlin.jvm") {
-        (extensions.findByName("kotlin") as? org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension)?.jvmToolchain {
-            (this as org.gradle.jvm.toolchain.JavaToolchainSpec).languageVersion.set(org.gradle.jvm.toolchain.JavaLanguageVersion.of(17))
+        extensions.findByName("kotlin")?.let {
+            (it as org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension).jvmToolchain(jdkVersion)
+        }
+    }
+
+    plugins.withId("com.android.application") {
+        extensions.findByType(com.android.build.api.dsl.ApplicationExtension::class.java)?.compileOptions {
+            sourceCompatibility = javaVersion
+            targetCompatibility = javaVersion
+        }
+    }
+
+    plugins.withId("com.android.library") {
+        extensions.findByType(com.android.build.api.dsl.LibraryExtension::class.java)?.compileOptions {
+            sourceCompatibility = javaVersion
+            targetCompatibility = javaVersion
         }
     }
 }
