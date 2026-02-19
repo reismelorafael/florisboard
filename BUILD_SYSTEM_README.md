@@ -174,9 +174,9 @@ When updating Android toolchain versions, change only `gradle/tools.versions.tom
 ## 📊 Build Configuration
 
 ### Version Info
-- **Version Code:** 85
-- **Version Name:** 0.4.0-bypassed
-- **Min SDK:** 26 (Android 8.0)
+- **Version Code:** `projectVersionCode` (from `gradle.properties`)
+- **Version Name:** `projectVersionName` (from `gradle.properties`)
+- **Min SDK:** `projectMinSdk` (from `gradle.properties`)
 - **Target SDK:** 35
 - **Compile SDK:** 36
 

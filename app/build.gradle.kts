@@ -45,8 +45,8 @@ android {
         applicationId = "dev.patrickgold.florisboard"
         minSdk = projectMinSdk.toInt()
         targetSdk = projectTargetSdk.toInt()
-        versionCode = 85
-        versionName = "0.4.0-bypassed"
+        versionCode = projectVersionCode.toInt()
+        versionName = projectVersionName
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         vectorDrawables {
