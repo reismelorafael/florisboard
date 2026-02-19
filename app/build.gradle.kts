@@ -14,6 +14,8 @@ plugins {
 val projectMinSdk: String by project
 val projectTargetSdk: String by project
 val projectCompileSdk: String by project
+val projectVersionCode: String by project
+val projectVersionName: String by project
 
 kotlin {
     compilerOptions {
@@ -43,8 +45,8 @@ android {
         applicationId = "dev.patrickgold.florisboard"
         minSdk = projectMinSdk.toInt()
         targetSdk = projectTargetSdk.toInt()
-        versionCode = 85
-        versionName = "0.4.0-bypassed"
+        versionCode = projectVersionCode.toInt()
+        versionName = projectVersionName
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         vectorDrawables {

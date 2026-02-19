@@ -93,9 +93,9 @@ analyze_build_config() {
         log_warning "ARM64 architecture not explicitly found in build.gradle.kts"
     fi
     
-    # Check version info
-    VERSION_CODE=$(grep "versionCode" app/build.gradle.kts | head -1 | grep -oP '\d+' || echo "N/A")
-    VERSION_NAME=$(grep "versionName" app/build.gradle.kts | head -1 | grep -oP '"[^"]+"' | tr -d '"' || echo "N/A")
+    # Check version info from single source of truth (gradle.properties)
+    VERSION_CODE=$(grep "^projectVersionCode=" gradle.properties | cut -d'=' -f2 || echo "N/A")
+    VERSION_NAME=$(grep "^projectVersionName=" gradle.properties | cut -d'=' -f2 || echo "N/A")
     log_info "Version Code: $VERSION_CODE"
     log_info "Version Name: $VERSION_NAME"
     
@@ -322,10 +322,10 @@ EOF
     echo "" >> "$FINAL_REPORT"
     
     echo "## Configuration Details" >> "$FINAL_REPORT"
-    VERSION_CODE=$(grep "versionCode" app/build.gradle.kts | head -1 | grep -oP '\d+' || echo "N/A")
-    VERSION_NAME=$(grep "versionName" app/build.gradle.kts | head -1 | grep -oP '"[^"]+"' | tr -d '"' || echo "N/A")
-    MIN_SDK=$(grep "projectMinSdk" gradle.properties | cut -d'=' -f2 || echo "N/A")
-    TARGET_SDK=$(grep "projectTargetSdk" gradle.properties | cut -d'=' -f2 || echo "N/A")
+    VERSION_CODE=$(grep "^projectVersionCode=" gradle.properties | cut -d'=' -f2 || echo "N/A")
+    VERSION_NAME=$(grep "^projectVersionName=" gradle.properties | cut -d'=' -f2 || echo "N/A")
+    MIN_SDK=$(grep "^projectMinSdk=" gradle.properties | cut -d'=' -f2 || echo "N/A")
+    TARGET_SDK=$(grep "^projectTargetSdk=" gradle.properties | cut -d'=' -f2 || echo "N/A")
     
     echo "- **Version Code:** $VERSION_CODE" >> "$FINAL_REPORT"
     echo "- **Version Name:** $VERSION_NAME" >> "$FINAL_REPORT"
